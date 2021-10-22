@@ -51,6 +51,8 @@ from typing import Union
 from asserttool import eprint
 from asserttool import nevd
 from asserttool import verify
+from clicktool import add_options
+from clicktool import click_arch_select
 from getdents import paths
 from mounttool import path_is_mounted
 from pathtool import path_is_file
@@ -195,11 +197,13 @@ def cli(ctx,
 @cli.command('get-stage3-url')
 @click.option('--c-std-lib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']),)
 @click.option('--multilib', is_flag=True,)
-@click.option('--arch', is_flag=False, required=True, type=click.Choice(['amd64']))
 @click.option('--proxy', is_flag=True)
 @click.option('--verbose', is_flag=True)
 @click.option('--debug', is_flag=True)
-def _get_stage3_url(stdlib: str,
+@add_options(click_arch_select)
+@click.pass_context
+def _get_stage3_url(ctx,
+                    stdlib: str,
                     multilib: bool,
                     arch: str,
                     proxy: bool,
@@ -215,12 +219,14 @@ def _get_stage3_url(stdlib: str,
 
 @cli.command('download-stage3')
 @click.option('--c-std-lib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']))
-@click.option('--arch', is_flag=False, required=True, type=click.Choice(['alpha', 'amd64', 'arm', 'hppa', 'ia64', 'mips', 'ppc', 's390', 'sh', 'sparc', 'x86']))
 @click.option('--multilib', is_flag=True, required=False)
 @click.option('--proxy', is_flag=True)
 @click.option('--verbose', is_flag=True)
 @click.option('--debug', is_flag=True)
-def _download_stage3(stdlib: str,
+@add_options(click_arch_select)
+@click.pass_context
+def _download_stage3(ctx,
+                     stdlib: str,
                      arch: str,
                      multilib: bool,
                      proxy: str,
