@@ -1,2 +1,2 @@
-from .sendgentoo_stage import install_stage3
+from .sendgentoo_stage import extract_stage3
 
