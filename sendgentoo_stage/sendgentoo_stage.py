@@ -228,6 +228,8 @@ def _get_stage3_url(ctx,
                     verbose: bool,
                     debug: bool,
                     ):
+
+    proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(verbose=verbose, debug=debug,)
     url = get_stage3_url(stdlib=stdlib,
@@ -256,6 +258,7 @@ def _download_stage3(ctx,
                      verbose: bool,
                      debug: bool,
                      ):
+    proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(verbose=verbose, debug=debug,)
     destination_dir = Path('/var/db/repos/gentoo/distfiles/')
