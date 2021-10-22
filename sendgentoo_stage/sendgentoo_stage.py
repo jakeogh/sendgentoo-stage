@@ -77,20 +77,21 @@ def get_stage3_url(stdlib: str,
         else:
             latest = 'latest-stage3-' + arch + '-hardened-openrc.txt'
     if stdlib == 'musl':
-        return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
+        #return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
         if not multilib:
             latest = 'latest-stage3-' + arch + 'musl-hardened-nomultilib-openrc.txt'
         else:
             latest = 'latest-stage3-' + arch + '-hardened-openrc.txt'
     if stdlib == 'uclibc':
-        assert False
         latest = 'latest-stage3-' + arch + '-uclibc-hardened.txt'
-        eprint("uclibc wont compile efivars")
-        quit(1)
+        raise ValueError("uclibc not supported, wont compile efivars")
+
     get_url = mirror + latest
+    if verbose:
+        ic(get_url)
     text = download_file(url=get_url, proxy_dict=proxy_dict)
     #r = requests.get(mirror + latest)
-    eprint(text)
+    ic(text)
     autobuild_file_lines = text.split('\n')
     #r.close()
     path = ''
