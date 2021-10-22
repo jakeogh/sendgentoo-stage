@@ -76,12 +76,12 @@ def get_stage3_url(stdlib: str,
             latest = 'latest-stage3-' + arch + '-hardened-nomultilib-openrc.txt'
         else:
             latest = 'latest-stage3-' + arch + '-hardened-openrc.txt'
+
     if stdlib == 'musl':
         #return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
-        if not multilib:
-            latest = 'latest-stage3-' + arch + 'musl-hardened-nomultilib-openrc.txt'
-        else:
-            latest = 'latest-stage3-' + arch + '-hardened-openrc.txt'
+        assert not multilib
+        latest = 'latest-stage3-' + arch + '-latest-stage3-arm64-musl-hardened.txt'
+
     if stdlib == 'uclibc':
         latest = 'latest-stage3-' + arch + '-uclibc-hardened.txt'
         raise ValueError("uclibc not supported, wont compile efivars")
