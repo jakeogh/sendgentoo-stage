@@ -65,7 +65,10 @@ def get_stage3_url(stdlib: str,
                    multilib: bool,
                    arch: str,
                    proxy_dict: dict,
+                   verbose: bool,
+                   debug: bool,
                    ):
+
     #mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
     mirror = 'http://gentoo.osuosl.org/releases/' + arch + '/autobuilds/'
     if stdlib == 'glibc':
@@ -108,9 +111,17 @@ def download_stage3(*,
                     multilib: bool,
                     arch: str,
                     proxy_dict: dict,
+                    verbose: bool,
+                    debug: bool,
                     ):
+
     destination_dir = Path(destination_dir)
-    url = get_stage3_url(proxy_dict=proxy_dict, stdlib=stdlib, multilib=multilib, arch=arch)
+    url = get_stage3_url(proxy_dict=proxy_dict,
+                         stdlib=stdlib,
+                         multilib=multilib,
+                         arch=arch,
+                         verbose=verbose,
+                         debug=debug,)
     ic(url)
     stage3_file = download_file(url=url, destination_dir=destination_dir, proxy_dict=proxy_dict)
     download_file(url=url + '.CONTENTS', destination_dir=destination_dir, proxy_dict=proxy_dict)
@@ -119,7 +130,8 @@ def download_stage3(*,
     return Path(stage3_file)
 
 
-def install_stage3(stdlib,
+def install_stage3(*,
+                   stdlib: str,
                    multilib: bool,
                    arch: str,
                    destination: Path,
@@ -143,7 +155,13 @@ def install_stage3(stdlib,
         proxy_dict = construct_proxy_dict(verbose=verbose, debug=debug,)
         #url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
         #stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
-        stage3_file = download_stage3(destination_dir=distfiles_dir, stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
+        stage3_file = download_stage3(destination_dir=distfiles_dir,
+                                      stdlib=stdlib,
+                                      multilib=multilib,
+                                      arch=arch,
+                                      proxy_dict=proxy_dict,
+                                      verbose=verbose,
+                                      debug=debug,)
         assert path_is_file(stage3_file)
 
         # this never worked
@@ -195,7 +213,7 @@ def cli(ctx,
 
 
 @cli.command('get-stage3-url')
-@click.option('--c-std-lib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']),)
+@click.option('--stdlib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']),)
 @click.option('--multilib', is_flag=True,)
 @click.option('--proxy', is_flag=True)
 @click.option('--verbose', is_flag=True)
@@ -212,13 +230,18 @@ def _get_stage3_url(ctx,
                     ):
     if proxy:
         proxy_dict = construct_proxy_dict(verbose=verbose, debug=debug,)
-    url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
+    url = get_stage3_url(stdlib=stdlib,
+                         multilib=multilib,
+                         arch=arch,
+                         proxy_dict=proxy_dict,
+                         verbose=verbose,
+                         debug=debug,)
     eprint(url)
 
 
 
 @cli.command('download-stage3')
-@click.option('--c-std-lib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']))
+@click.option('--stdlib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']))
 @click.option('--multilib', is_flag=True, required=False)
 @click.option('--proxy', is_flag=True)
 @click.option('--verbose', is_flag=True)
@@ -240,4 +263,6 @@ def _download_stage3(ctx,
                     stdlib=stdlib,
                     multilib=multilib,
                     arch=arch,
-                    proxy_dict=proxy_dict,)
+                    proxy_dict=proxy_dict,
+                    verbose=verbose,
+                    debug=debug,)
