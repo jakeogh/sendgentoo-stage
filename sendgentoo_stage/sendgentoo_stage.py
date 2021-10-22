@@ -152,6 +152,7 @@ def extract_stage3(*,
 
     with chdir(destination):
         ic(os.getcwd())
+        ic(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
         proxy_dict = construct_proxy_dict(verbose=verbose, debug=debug,)
         #url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
@@ -193,7 +194,6 @@ def extract_stage3(*,
 
         assert len(list(paths('.'))) == 1   # empty directory
         sh.tar('--xz', '-x', '-p', '-f', stage3_file.as_posix(), '-C', destination.as_posix(), _out=sys.stdout, _err=sys.stderr)
-
 
 
 @click.group()
