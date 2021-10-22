@@ -165,7 +165,7 @@ def extract_stage3(*,
                                       debug=debug,)
         assert path_is_file(stage3_file)
         ic(list(paths('.', max_depth=0)))
-        assert len(list(paths('.'))) == 0
+        assert len(list(paths('.'))) == 1  # just '.'
 
         # this never worked
         #gpg = gnupg.GPG(verbose=True)
