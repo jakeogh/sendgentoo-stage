@@ -143,7 +143,7 @@ def extract_stage3(*,
                    debug: bool,
                    ):
 
-    destination = Path(destination)
+    destination = Path(destination).resolve()
     ic(stdlib, multilib, arch, destination, vm)
     #os.chdir(destination)
     ic(destination)
