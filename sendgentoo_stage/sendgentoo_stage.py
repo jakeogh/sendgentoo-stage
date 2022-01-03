@@ -24,26 +24,22 @@
 
 import os
 import sys
-import time
+#import time
 from pathlib import Path
 from signal import SIG_DFL
 from signal import SIGPIPE
 from signal import signal
-from subprocess import CalledProcessError
-from typing import ByteString
+#from subprocess import CalledProcessError
+#from typing import ByteString
 from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
-from typing import Sequence
-from typing import Tuple
-from typing import Union
 
 import click
 import sh
 from asserttool import eprint
 from asserttool import ic
-from asserttool import nevd
 from asserttool import tv
 from clicktool import click_add_options
 from clicktool import click_arch_select
@@ -53,8 +49,6 @@ from mounttool import path_is_mounted
 from nettool import construct_proxy_dict
 from nettool import download_file
 from pathtool import path_is_file
-from retry_on_exception import retry_on_exception
-from run_command import run_command
 from with_chdir import chdir
 
 signal(SIGPIPE, SIG_DFL)
