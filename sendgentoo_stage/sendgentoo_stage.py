@@ -24,7 +24,6 @@
 
 import os
 import sys
-#import time
 from pathlib import Path
 from signal import SIG_DFL
 from signal import SIGPIPE
@@ -35,15 +34,16 @@ from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Union
 
 import click
 import sh
-from asserttool import eprint
 from asserttool import ic
-from asserttool import tv
 from clicktool import click_add_options
 from clicktool import click_arch_select
 from clicktool import click_global_options
+from clicktool import tv
+from eprint import eprint
 from getdents import paths
 from mounttool import path_is_mounted
 from nettool import construct_proxy_dict
@@ -58,7 +58,7 @@ def get_stage3_url(stdlib: str,
                    multilib: bool,
                    arch: str,
                    proxy_dict: dict,
-                   verbose: int,
+                   verbose: Union[bool, int, float],
                    ):
 
     #mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
@@ -103,7 +103,7 @@ def download_stage3(*,
                     multilib: bool,
                     arch: str,
                     proxy_dict: dict,
-                    verbose: int,
+                    verbose: Union[bool, int, float],
                     ):
 
     destination_dir = Path('/var/tmp/sendgentoo_stage/') # unpriv user
@@ -130,7 +130,7 @@ def extract_stage3(*,
                    expect_mounted_destination: bool,
                    vm: Optional[str],
                    vm_ram: Optional[int],
-                   verbose: int,
+                   verbose: Union[bool, int, float],
                    ):
 
     destination = Path(destination).resolve()
@@ -186,11 +186,11 @@ def extract_stage3(*,
         sh.tar('--xz', '-x', '-p', '-f', stage3_file.as_posix(), '-C', destination.as_posix(), _out=sys.stdout, _err=sys.stderr)
 
 
-@click.group()
+@click.group(no_args_is_help=True)
 @click_add_options(click_global_options)
 @click.pass_context
 def cli(ctx,
-        verbose: int,
+        verbose: Union[bool, int, float],
         verbose_inf: bool,
         ):
 
@@ -212,9 +212,14 @@ def _get_stage3_url(ctx,
                     multilib: bool,
                     arch: str,
                     proxy: bool,
-                    verbose: int,
+                    verbose: Union[bool, int, float],
                     verbose_inf: bool,
                     ):
+
+    tty, verbose = tv(ctx=ctx,
+                      verbose=verbose,
+                      verbose_inf=verbose_inf,
+                      )
 
     proxy_dict = None
     if proxy:
@@ -241,9 +246,15 @@ def _download_stage3(ctx,
                      arch: str,
                      multilib: bool,
                      proxy: str,
-                     verbose: int,
+                     verbose: Union[bool, int, float],
                      verbose_inf: bool,
                      ):
+
+    tty, verbose = tv(ctx=ctx,
+                      verbose=verbose,
+                      verbose_inf=verbose_inf,
+                      )
+
     proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(verbose=verbose,)
@@ -276,9 +287,15 @@ def _extract_stage3(ctx,
                     arch: str,
                     multilib: bool,
                     proxy: str,
-                    verbose: int,
+                    verbose: Union[bool, int, float],
                     verbose_inf: bool,
                     ):
+
+    tty, verbose = tv(ctx=ctx,
+                      verbose=verbose,
+                      verbose_inf=verbose_inf,
+                      )
+
     proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(verbose=verbose,)
