@@ -135,12 +135,11 @@ def extract_stage3(*,
 
     destination = Path(destination).resolve()
     ic(stdlib, multilib, arch, destination, vm)
-    #os.chdir(destination)
     ic(destination)
     if expect_mounted_destination:
         assert path_is_mounted(destination, verbose=verbose,)
 
-    with chdir(destination):
+    with chdir(destination, verbose=verbose,):
         ic(os.getcwd())
         ic(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
