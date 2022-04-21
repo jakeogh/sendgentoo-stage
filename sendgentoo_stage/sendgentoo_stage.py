@@ -28,8 +28,8 @@ from pathlib import Path
 from signal import SIG_DFL
 from signal import SIGPIPE
 from signal import signal
-#from subprocess import CalledProcessError
-#from typing import ByteString
+# from subprocess import CalledProcessError
+# from typing import ByteString
 from typing import Generator
 from typing import Iterable
 from typing import List
@@ -54,257 +54,348 @@ from with_chdir import chdir
 signal(SIGPIPE, SIG_DFL)
 
 
-def get_stage3_url(stdlib: str,
-                   multilib: bool,
-                   arch: str,
-                   proxy_dict: dict,
-                   verbose: Union[bool, int, float],
-                   ):
+def get_stage3_url(
+    stdlib: str,
+    multilib: bool,
+    arch: str,
+    proxy_dict: dict,
+    verbose: Union[bool, int, float],
+):
 
-    #mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
-    mirror = 'http://gentoo.osuosl.org/releases/' + arch + '/autobuilds/'
-    if stdlib == 'glibc':
+    # mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
+    mirror = "http://gentoo.osuosl.org/releases/" + arch + "/autobuilds/"
+    if stdlib == "glibc":
         if not multilib:
-            latest = 'latest-stage3-' + arch + '-hardened-nomultilib-openrc.txt'
+            latest = "latest-stage3-" + arch + "-hardened-nomultilib-openrc.txt"
         else:
-            latest = 'latest-stage3-' + arch + '-hardened-openrc.txt'
+            latest = "latest-stage3-" + arch + "-hardened-openrc.txt"
 
-    if stdlib == 'musl':
-        #return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
+    if stdlib == "musl":
+        # return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
         assert not multilib
-        latest = 'latest-stage3-' + arch + '-musl-hardened.txt'
+        latest = "latest-stage3-" + arch + "-musl-hardened.txt"
 
-    if stdlib == 'uclibc':
-        latest = 'latest-stage3-' + arch + '-uclibc-hardened.txt'
+    if stdlib == "uclibc":
+        latest = "latest-stage3-" + arch + "-uclibc-hardened.txt"
         raise ValueError("uclibc not supported, wont compile efivars")
 
     get_url = mirror + latest
     if verbose:
         ic(get_url)
-    text = download_file(url=get_url, proxy_dict=proxy_dict, verbose=verbose,)
-    #r = requests.get(mirror + latest)
+    text = download_file(
+        url=get_url,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
+    # r = requests.get(mirror + latest)
     ic(text)
-    autobuild_file_lines = text.split('\n')
-    #r.close()
-    path = ''
+    autobuild_file_lines = text.split("\n")
+    # r.close()
+    path = ""
     for line in autobuild_file_lines:
-        if 'stage3-' + arch in line:
-            path = line.split(' ')[0]
+        if "stage3-" + arch in line:
+            path = line.split(" ")[0]
             break
-    #eprint('path:', path)
-    assert 'stage3' in path
+    # eprint('path:', path)
+    assert "stage3" in path
     url = mirror + path
-    #eprint("url:", url)
+    # eprint("url:", url)
     return url
 
 
-def download_stage3(*,
-                    stdlib: str,
-                    multilib: bool,
-                    arch: str,
-                    proxy_dict: dict,
-                    verbose: Union[bool, int, float],
-                    ):
+def download_stage3(
+    *,
+    stdlib: str,
+    multilib: bool,
+    arch: str,
+    proxy_dict: dict,
+    verbose: Union[bool, int, float],
+):
 
-    destination_dir = Path('/var/tmp/sendgentoo_stage/') # unpriv user
-    os.makedirs('/var/tmp/sendgentoo_stage/', exist_ok=True)
-    url = get_stage3_url(proxy_dict=proxy_dict,
-                         stdlib=stdlib,
-                         multilib=multilib,
-                         arch=arch,
-                         verbose=verbose,
-                         )
+    destination_dir = Path("/var/tmp/sendgentoo_stage/")  # unpriv user
+    os.makedirs("/var/tmp/sendgentoo_stage/", exist_ok=True)
+    url = get_stage3_url(
+        proxy_dict=proxy_dict,
+        stdlib=stdlib,
+        multilib=multilib,
+        arch=arch,
+        verbose=verbose,
+    )
     ic(url)
-    stage3_file = download_file(url=url, destination_dir=destination_dir, proxy_dict=proxy_dict, verbose=verbose,)
-    download_file(url=url + '.CONTENTS', destination_dir=destination_dir, proxy_dict=proxy_dict, verbose=verbose,)
-    download_file(url=url + '.DIGESTS', destination_dir=destination_dir, proxy_dict=proxy_dict, verbose=verbose,)
-    download_file(url=url + '.DIGESTS.asc', destination_dir=destination_dir, proxy_dict=proxy_dict, verbose=verbose,)
+    stage3_file = download_file(
+        url=url,
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
+    download_file(
+        url=url + ".CONTENTS",
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
+    download_file(
+        url=url + ".DIGESTS",
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
+    download_file(
+        url=url + ".DIGESTS.asc",
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
     return Path(stage3_file)
 
 
-def extract_stage3(*,
-                   stdlib: str,
-                   multilib: bool,
-                   arch: str,
-                   destination: Path,
-                   expect_mounted_destination: bool,
-                   vm: Optional[str],
-                   vm_ram: Optional[int],
-                   verbose: Union[bool, int, float],
-                   ):
+def extract_stage3(
+    *,
+    stdlib: str,
+    multilib: bool,
+    arch: str,
+    destination: Path,
+    expect_mounted_destination: bool,
+    vm: Optional[str],
+    vm_ram: Optional[int],
+    verbose: Union[bool, int, float],
+):
 
     destination = Path(destination).resolve()
     ic(stdlib, multilib, arch, destination, vm)
     ic(destination)
     if expect_mounted_destination:
-        assert path_is_mounted(destination, verbose=verbose,)
+        assert path_is_mounted(
+            destination,
+            verbose=verbose,
+        )
 
-    with chdir(destination, verbose=verbose,):
+    with chdir(
+        destination,
+        verbose=verbose,
+    ):
         ic(os.getcwd())
         ic(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
-        proxy_dict = construct_proxy_dict(verbose=verbose,)
-        #url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
-        #stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
-        stage3_file = download_stage3(stdlib=stdlib,
-                                      multilib=multilib,
-                                      arch=arch,
-                                      proxy_dict=proxy_dict,
-                                      verbose=verbose,
-                                      )
+        proxy_dict = construct_proxy_dict(
+            verbose=verbose,
+        )
+        # url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
+        # stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
+        stage3_file = download_stage3(
+            stdlib=stdlib,
+            multilib=multilib,
+            arch=arch,
+            proxy_dict=proxy_dict,
+            verbose=verbose,
+        )
         assert path_is_file(stage3_file)
-        ic(list(paths('.', max_depth=0)))
-        assert len(list(paths('.'))) == 1  # just '.'
+        ic(list(paths(".", max_depth=0, verbose=verbose)))
+        assert len(list(paths(".", verbose=verbose))) == 1  # just '.'
 
         # this never worked
-        #gpg = gnupg.GPG(verbose=True)
-        #import_result = gpg.recv_keys('keyserver.ubuntu.com', '0x2D182910')
-        #ceprint(import_result)
+        # gpg = gnupg.GPG(verbose=True)
+        # import_result = gpg.recv_keys('keyserver.ubuntu.com', '0x2D182910')
+        # ceprint(import_result)
 
         ## this works sometimes, but now complaines abut no dirmngr
-        #gpg_cmd = 'gpg --keyserver keyserver.ubuntu.com --recv-key 0x2D182910'
+        # gpg_cmd = 'gpg --keyserver keyserver.ubuntu.com --recv-key 0x2D182910'
         ##if proxy:
         ##    keyserver_options = " --keyserver-options http_proxy=http://" + proxy
         ##    gpg_cmd += keyserver_options
-        #run_command(gpg_cmd, verbose=True)
+        # run_command(gpg_cmd, verbose=True)
 
         ic(stage3_file)
-        sh.gpg('--verify', '--verbose', stage3_file.as_posix() + '.DIGESTS.asc', _out=sys.stdout, _err=sys.stderr)
+        sh.gpg(
+            "--verify",
+            "--verbose",
+            stage3_file.as_posix() + ".DIGESTS.asc",
+            _out=sys.stdout,
+            _err=sys.stderr,
+        )
 
-        #whirlpool = run_command("openssl dgst -r -whirlpool " + stage3_file.as_posix() + "| cut -d ' ' -f 1",
+        # whirlpool = run_command("openssl dgst -r -whirlpool " + stage3_file.as_posix() + "| cut -d ' ' -f 1",
         #                        verbose=True).decode('utf8').strip()
-        #try:
+        # try:
         #    run_command("/bin/grep " + whirlpool + ' ' + stage3_file.as_posix() + '.DIGESTS', verbose=True)
-        #except CalledProcessError:
+        # except CalledProcessError:
         #    ic('BAD WHIRPOOL HASH:', whirlpool)
         #    ic('For file:', stage3_file)
         #    ic('File is corrupt (most likely partially downloaded). Delete it and try again.')
         #    sys.exit(1)
 
-        assert len(list(paths('.'))) == 1   # empty directory
-        sh.tar('--xz', '-x', '-p', '-f', stage3_file.as_posix(), '-C', destination.as_posix(), _out=sys.stdout, _err=sys.stderr)
+        assert len(list(paths(".", verbose=verbose))) == 1  # empty directory
+        sh.tar(
+            "--xz",
+            "-x",
+            "-p",
+            "-f",
+            stage3_file.as_posix(),
+            "-C",
+            destination.as_posix(),
+            _out=sys.stdout,
+            _err=sys.stderr,
+        )
 
 
 @click.group(no_args_is_help=True)
 @click_add_options(click_global_options)
 @click.pass_context
-def cli(ctx,
-        verbose: Union[bool, int, float],
-        verbose_inf: bool,
-        ):
+def cli(
+    ctx,
+    verbose: Union[bool, int, float],
+    verbose_inf: bool,
+):
 
-    tty, verbose = tv(ctx=ctx,
-                      verbose=verbose,
-                      verbose_inf=verbose_inf,
-                      )
+    tty, verbose = tv(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+    )
 
 
-@cli.command('get-stage3-url')
-@click.option('--stdlib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']),)
-@click.option('--multilib', is_flag=True,)
-@click.option('--proxy', is_flag=True)
+@cli.command("get-stage3-url")
+@click.option(
+    "--stdlib",
+    is_flag=False,
+    required=True,
+    type=click.Choice(["glibc", "musl", "uclibc"]),
+)
+@click.option(
+    "--multilib",
+    is_flag=True,
+)
+@click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
 @click.pass_context
-def _get_stage3_url(ctx,
-                    stdlib: str,
-                    multilib: bool,
-                    arch: str,
-                    proxy: bool,
-                    verbose: Union[bool, int, float],
-                    verbose_inf: bool,
-                    ):
+def _get_stage3_url(
+    ctx,
+    stdlib: str,
+    multilib: bool,
+    arch: str,
+    proxy: bool,
+    verbose: Union[bool, int, float],
+    verbose_inf: bool,
+):
 
-    tty, verbose = tv(ctx=ctx,
-                      verbose=verbose,
-                      verbose_inf=verbose_inf,
-                      )
+    tty, verbose = tv(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+    )
 
     proxy_dict = None
     if proxy:
-        proxy_dict = construct_proxy_dict(verbose=verbose,)
-    url = get_stage3_url(stdlib=stdlib,
-                         multilib=multilib,
-                         arch=arch,
-                         proxy_dict=proxy_dict,
-                         verbose=verbose,
-                         )
+        proxy_dict = construct_proxy_dict(
+            verbose=verbose,
+        )
+    url = get_stage3_url(
+        stdlib=stdlib,
+        multilib=multilib,
+        arch=arch,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
     eprint(url)
 
 
-
-@cli.command('download-stage3')
-@click.option('--stdlib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']))
-@click.option('--multilib', is_flag=True, required=False)
-@click.option('--proxy', is_flag=True)
+@cli.command("download-stage3")
+@click.option(
+    "--stdlib",
+    is_flag=False,
+    required=True,
+    type=click.Choice(["glibc", "musl", "uclibc"]),
+)
+@click.option("--multilib", is_flag=True, required=False)
+@click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
 @click.pass_context
-def _download_stage3(ctx,
-                     stdlib: str,
-                     arch: str,
-                     multilib: bool,
-                     proxy: str,
-                     verbose: Union[bool, int, float],
-                     verbose_inf: bool,
-                     ):
+def _download_stage3(
+    ctx,
+    stdlib: str,
+    arch: str,
+    multilib: bool,
+    proxy: str,
+    verbose: Union[bool, int, float],
+    verbose_inf: bool,
+):
 
-    tty, verbose = tv(ctx=ctx,
-                      verbose=verbose,
-                      verbose_inf=verbose_inf,
-                      )
+    tty, verbose = tv(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+    )
 
     proxy_dict = None
     if proxy:
-        proxy_dict = construct_proxy_dict(verbose=verbose,)
-    download_stage3(stdlib=stdlib,
-                    multilib=multilib,
-                    arch=arch,
-                    proxy_dict=proxy_dict,
-                    verbose=verbose,
-                    )
+        proxy_dict = construct_proxy_dict(
+            verbose=verbose,
+        )
+    download_stage3(
+        stdlib=stdlib,
+        multilib=multilib,
+        arch=arch,
+        proxy_dict=proxy_dict,
+        verbose=verbose,
+    )
 
 
-@cli.command('extract-stage3')
-@click.argument("destination",
-                type=click.Path(exists=False,
-                                dir_okay=True,
-                                file_okay=False,
-                                allow_dash=False,
-                                path_type=Path,),
-                nargs=1,
-                required=True,)
-@click.option('--stdlib', is_flag=False, required=True, type=click.Choice(['glibc', 'musl', 'uclibc']))
-@click.option('--multilib', is_flag=True, required=False)
-@click.option('--proxy', is_flag=True)
+@cli.command("extract-stage3")
+@click.argument(
+    "destination",
+    type=click.Path(
+        exists=False,
+        dir_okay=True,
+        file_okay=False,
+        allow_dash=False,
+        path_type=Path,
+    ),
+    nargs=1,
+    required=True,
+)
+@click.option(
+    "--stdlib",
+    is_flag=False,
+    required=True,
+    type=click.Choice(["glibc", "musl", "uclibc"]),
+)
+@click.option("--multilib", is_flag=True, required=False)
+@click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
 @click.pass_context
-def _extract_stage3(ctx,
-                    destination: Path,
-                    stdlib: str,
-                    arch: str,
-                    multilib: bool,
-                    proxy: str,
-                    verbose: Union[bool, int, float],
-                    verbose_inf: bool,
-                    ):
+def _extract_stage3(
+    ctx,
+    destination: Path,
+    stdlib: str,
+    arch: str,
+    multilib: bool,
+    proxy: str,
+    verbose: Union[bool, int, float],
+    verbose_inf: bool,
+):
 
-    tty, verbose = tv(ctx=ctx,
-                      verbose=verbose,
-                      verbose_inf=verbose_inf,
-                      )
+    tty, verbose = tv(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+    )
 
     proxy_dict = None
     if proxy:
-        proxy_dict = construct_proxy_dict(verbose=verbose,)
+        proxy_dict = construct_proxy_dict(
+            verbose=verbose,
+        )
 
-    extract_stage3(stdlib=stdlib,
-                   arch=arch,
-                   multilib=multilib,
-                   destination=destination,
-                   expect_mounted_destination=False,
-                   vm=None,
-                   vm_ram=None,
-                   verbose=verbose,
-                   )
+    extract_stage3(
+        stdlib=stdlib,
+        arch=arch,
+        multilib=multilib,
+        destination=destination,
+        expect_mounted_destination=False,
+        vm=None,
+        vm_ram=None,
+        verbose=verbose,
+    )
