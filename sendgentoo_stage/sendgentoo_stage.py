@@ -190,8 +190,11 @@ def extract_stage3(
             verbose=verbose,
         )
         assert path_is_file(stage3_file)
-        ic(list(paths(".", max_depth=0, verbose=verbose)))
-        assert len(list(paths(".", verbose=verbose))) == 1  # just '.'
+        # ic(list(paths(".", max_depth=0, verbose=verbose)))  # bug, includes parent
+        ic(list(paths(".", min_depth=1, max_depth=0, verbose=verbose)))
+        assert (
+            len(list(paths(".", min_depth=1, max_depth=0, verbose=verbose))) == 2
+        )  # just 'boot' and 'lost+found'
 
         # this never worked
         # gpg = gnupg.GPG(verbose=True)
