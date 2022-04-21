@@ -141,7 +141,7 @@ def download_stage3(
         verbose=verbose,
     )
     download_file(
-        url=url + ".DIGESTS.asc",
+        url=url + ".asc",
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
         verbose=verbose,
@@ -212,7 +212,7 @@ def extract_stage3(
         sh.gpg(
             "--verify",
             "--verbose",
-            stage3_file.as_posix() + ".DIGESTS.asc",
+            stage3_file.as_posix() + ".asc",
             _out=sys.stdout,
             _err=sys.stderr,
         )
