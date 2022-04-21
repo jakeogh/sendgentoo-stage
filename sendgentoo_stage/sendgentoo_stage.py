@@ -248,6 +248,7 @@ def cli(
     ctx,
     verbose: Union[bool, int, float],
     verbose_inf: bool,
+    dict_input: bool,
 ):
 
     tty, verbose = tv(
