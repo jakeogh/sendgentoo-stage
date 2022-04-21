@@ -227,7 +227,10 @@ def extract_stage3(
         #    ic('File is corrupt (most likely partially downloaded). Delete it and try again.')
         #    sys.exit(1)
 
-        assert len(list(paths(".", verbose=verbose))) == 1  # empty directory
+        # assert len(list(paths(".", verbose=verbose))) == 1  # empty directory
+        assert (
+            len(list(paths(".", min_depth=1, max_depth=0, verbose=verbose))) == 2
+        )  # just 'boot' and 'lost+found'
         sh.tar(
             "--xz",
             "-x",
