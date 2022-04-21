@@ -280,6 +280,7 @@ def _get_stage3_url(
     proxy: bool,
     verbose: Union[bool, int, float],
     verbose_inf: bool,
+    dict_input: bool,
 ):
 
     tty, verbose = tv(
@@ -323,6 +324,7 @@ def _download_stage3(
     proxy: str,
     verbose: Union[bool, int, float],
     verbose_inf: bool,
+    dict_input: bool,
 ):
 
     tty, verbose = tv(
@@ -378,6 +380,7 @@ def _extract_stage3(
     proxy: str,
     verbose: Union[bool, int, float],
     verbose_inf: bool,
+    dict_input: bool,
 ):
 
     tty, verbose = tv(
