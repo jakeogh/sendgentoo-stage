@@ -22,20 +22,19 @@
 
 # pylint: disable=C0413  # TEMP isort issue [wrong-import-position] Import "from pathlib import Path" should be placed at the top of the module [C0413]
 
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
 from signal import SIG_DFL
 from signal import SIGPIPE
 from signal import signal
-# from subprocess import CalledProcessError
-# from typing import ByteString
-from typing import Generator
-from typing import Iterable
 
 import click
 import sh
 from asserttool import ic
+from click_auto_help import AHGroup
 from clicktool import click_add_options
 from clicktool import click_arch_select
 from clicktool import click_global_options
