@@ -57,6 +57,8 @@ def get_stage3_url(
     proxy_dict: dict,
     verbose: bool | int | float,
 ):
+    assert isinstance(arch, str)
+    assert len(arch) > 0
 
     # mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
     mirror = "http://gentoo.osuosl.org/releases/" + arch + "/autobuilds/"
@@ -108,6 +110,8 @@ def download_stage3(
     verbose: bool | int | float,
 ):
 
+    assert isinstance(arch, str)
+    assert len(arch) > 0
     destination_dir = Path("/var/tmp/sendgentoo_stage/")  # unpriv user
     os.makedirs("/var/tmp/sendgentoo_stage/", exist_ok=True)
     url = get_stage3_url(
@@ -157,6 +161,8 @@ def extract_stage3(
     verbose: bool | int | float,
 ):
 
+    assert isinstance(arch, str)
+    assert len(arch) > 0
     destination = Path(destination).resolve()
     ic(stdlib, multilib, arch, destination, vm)
     ic(destination)
