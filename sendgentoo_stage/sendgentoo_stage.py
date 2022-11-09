@@ -210,6 +210,15 @@ def extract_stage3(
         ##    gpg_cmd += keyserver_options
         # run_command(gpg_cmd, verbose=True)
 
+        sh.gpg(
+            "--keyserver",
+            "hkps://keys.gentoo.org",
+            "--recv-keys",
+            "0xBB572E0E2D182910",
+            _out=sys.stdout,
+            _err=sys.stderr,
+        )
+
         ic(stage3_file)
         sh.gpg(
             "--verify",
