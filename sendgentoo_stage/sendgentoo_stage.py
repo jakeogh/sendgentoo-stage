@@ -218,6 +218,14 @@ def extract_stage3(
             _out=sys.stdout,
             _err=sys.stderr,
         )
+        sh.gpg(
+            "--keyserver",
+            "hkps://keys.gentoo.org",
+            "--recv-keys",
+            "534E4209AB49EEE1C19D96162C44695DB9F6043D",
+            _out=sys.stdout,
+            _err=sys.stderr,
+        )
 
         ic(stage3_file)
         sh.gpg(
