@@ -34,6 +34,7 @@ from signal import signal
 import click
 import sh
 from asserttool import ic
+from asserttool import icp
 from click_auto_help import AHGroup
 from clicktool import click_add_options
 from clicktool import click_arch_select
@@ -41,10 +42,11 @@ from clicktool import click_global_options
 from clicktool import tv
 from eprint import eprint
 from getdents import paths
+from globalverbose import gvd
 from mounttool import path_is_mounted
-from nettool import construct_proxy_dict
 from nettool import download_file
 from pathtool import path_is_file
+from proxytool import construct_proxy_dict
 from with_chdir import chdir
 
 signal(SIGPIPE, SIG_DFL)
@@ -55,7 +57,7 @@ def get_stage3_url(
     multilib: bool,
     arch: str,
     proxy_dict: dict,
-    verbose: bool | int | float,
+    verbose: bool | int | float = False,
 ):
     assert isinstance(arch, str)
     assert len(arch) > 0
@@ -78,15 +80,13 @@ def get_stage3_url(
         raise ValueError("uclibc not supported, wont compile efivars")
 
     get_url = mirror + latest
-    if verbose:
-        ic(get_url)
+    ic(get_url)
     text = download_file(
         url=get_url,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     # r = requests.get(mirror + latest)
-    ic(text)
+    icp(text)
     autobuild_file_lines = text.split("\n")
     # r.close()
     path = ""
@@ -107,9 +107,8 @@ def download_stage3(
     multilib: bool,
     arch: str,
     proxy_dict: dict,
-    verbose: bool | int | float,
+    verbose: bool | int | float = False,
 ):
-
     assert isinstance(arch, str)
     assert len(arch) > 0
     destination_dir = Path("/var/tmp/sendgentoo_stage/")  # unpriv user
@@ -119,32 +118,27 @@ def download_stage3(
         stdlib=stdlib,
         multilib=multilib,
         arch=arch,
-        verbose=verbose,
     )
-    ic(url)
+    icp(url)
     stage3_file = download_file(
         url=url,
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     download_file(
         url=url + ".CONTENTS",
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     download_file(
         url=url + ".DIGESTS",
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     download_file(
         url=url + ".asc",
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     return Path(stage3_file)
 
@@ -158,29 +152,25 @@ def extract_stage3(
     expect_mounted_destination: bool,
     vm: None | str,
     vm_ram: None | int,
-    verbose: bool | int | float,
+    verbose: bool | int | float = False,
 ):
-
     assert isinstance(arch, str)
     assert len(arch) > 0
     destination = Path(destination).resolve()
-    ic(stdlib, multilib, arch, destination, vm)
-    ic(destination)
+    icp(stdlib, multilib, arch, destination, vm)
+    icp(destination)
     if expect_mounted_destination:
         assert path_is_mounted(
             destination,
-            verbose=verbose,
         )
 
     with chdir(
         destination,
-        verbose=verbose,
     ):
-        ic(os.getcwd())
-        ic(destination.as_posix())
+        icp(os.getcwd())
+        icp(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
         proxy_dict = construct_proxy_dict(
-            verbose=verbose,
         )
         # url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
         # stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
@@ -189,13 +179,12 @@ def extract_stage3(
             multilib=multilib,
             arch=arch,
             proxy_dict=proxy_dict,
-            verbose=verbose,
         )
         assert path_is_file(stage3_file)
-        # ic(list(paths(".", max_depth=0, verbose=verbose)))  # bug, includes parent
-        ic(list(paths(".", min_depth=1, max_depth=0, verbose=verbose)))
+        # icp(list(paths(".", max_depth=0,)))  # bug, includes parent
+        icp(list(paths(".", min_depth=1, max_depth=0)))
         assert (
-            len(list(paths(".", min_depth=1, max_depth=0, verbose=verbose))) == 2
+            len(list(paths(".", min_depth=1, max_depth=0,))) == 2
         )  # just 'boot' and 'lost+found'
 
         # this never worked
@@ -248,7 +237,7 @@ def extract_stage3(
 
         # assert len(list(paths(".", verbose=verbose))) == 1  # empty directory
         assert (
-            len(list(paths(".", min_depth=1, max_depth=0, verbose=verbose))) == 2
+            len(list(paths(".", min_depth=1, max_depth=0,))) == 2
         )  # just 'boot' and 'lost+found'
         sh.tar(
             "--xz",
@@ -268,11 +257,10 @@ def extract_stage3(
 @click.pass_context
 def cli(
     ctx,
-    verbose: bool | int | float,
     verbose_inf: bool,
     dict_output: bool,
+    verbose: bool | int | float = False,
 ):
-
     tty, verbose = tv(
         ctx=ctx,
         verbose=verbose,
@@ -301,11 +289,10 @@ def _get_stage3_url(
     multilib: bool,
     arch: str,
     proxy: bool,
-    verbose: bool | int | float,
     verbose_inf: bool,
     dict_output: bool,
+    verbose: bool | int | float = False,
 ):
-
     tty, verbose = tv(
         ctx=ctx,
         verbose=verbose,
@@ -315,14 +302,12 @@ def _get_stage3_url(
     proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(
-            verbose=verbose,
         )
     url = get_stage3_url(
         stdlib=stdlib,
         multilib=multilib,
         arch=arch,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
     eprint(url)
 
@@ -345,11 +330,10 @@ def _download_stage3(
     arch: str,
     multilib: bool,
     proxy: str,
-    verbose: bool | int | float,
     verbose_inf: bool,
     dict_output: bool,
+    verbose: bool | int | float = False,
 ):
-
     tty, verbose = tv(
         ctx=ctx,
         verbose=verbose,
@@ -359,14 +343,12 @@ def _download_stage3(
     proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict(
-            verbose=verbose,
         )
     download_stage3(
         stdlib=stdlib,
         multilib=multilib,
         arch=arch,
         proxy_dict=proxy_dict,
-        verbose=verbose,
     )
 
 
@@ -401,11 +383,10 @@ def _extract_stage3(
     arch: str,
     multilib: bool,
     proxy: str,
-    verbose: bool | int | float,
     verbose_inf: bool,
     dict_output: bool,
+    verbose: bool | int | float = False,
 ):
-
     tty, verbose = tv(
         ctx=ctx,
         verbose=verbose,
@@ -413,10 +394,9 @@ def _extract_stage3(
     )
 
     proxy_dict = None
+    #todo
     if proxy:
-        proxy_dict = construct_proxy_dict(
-            verbose=verbose,
-        )
+        proxy_dict = construct_proxy_dict()
 
     extract_stage3(
         stdlib=stdlib,
@@ -426,5 +406,4 @@ def _extract_stage3(
         expect_mounted_destination=False,
         vm=None,
         vm_ram=None,
-        verbose=verbose,
     )
