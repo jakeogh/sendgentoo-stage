@@ -39,7 +39,7 @@ from click_auto_help import AHGroup
 from clicktool import click_add_options
 from clicktool import click_arch_select
 from clicktool import click_global_options
-from clicktool import tv
+from clicktool import tvicgvd
 from eprint import eprint
 from getdents import paths
 from globalverbose import gvd
@@ -52,12 +52,26 @@ from with_chdir import chdir
 signal(SIGPIPE, SIG_DFL)
 
 
+def get_gpg_key(fingerprint: str):
+    try:
+        sh.gpg("--fingerprint", fingerprint)
+    except sh.ErrorReturnCode_2:
+        sh.gpg(
+            "--keyserver",
+            "hkps://keys.gentoo.org",
+            "--recv-keys",
+            fingerprint,
+            _out=sys.stdout,
+            _err=sys.stderr,
+        )
+
+
 def get_stage3_url(
     stdlib: str,
     multilib: bool,
     arch: str,
     proxy_dict: dict,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     assert isinstance(arch, str)
     assert len(arch) > 0
@@ -107,7 +121,7 @@ def download_stage3(
     multilib: bool,
     arch: str,
     proxy_dict: dict,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     assert isinstance(arch, str)
     assert len(arch) > 0
@@ -152,7 +166,7 @@ def extract_stage3(
     expect_mounted_destination: bool,
     vm: None | str,
     vm_ram: None | int,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
     assert isinstance(arch, str)
     assert len(arch) > 0
@@ -170,8 +184,7 @@ def extract_stage3(
         icp(os.getcwd())
         icp(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
-        proxy_dict = construct_proxy_dict(
-        )
+        proxy_dict = construct_proxy_dict()
         # url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
         # stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
         stage3_file = download_stage3(
@@ -184,7 +197,16 @@ def extract_stage3(
         # icp(list(paths(".", max_depth=0,)))  # bug, includes parent
         icp(list(paths(".", min_depth=1, max_depth=0)))
         assert (
-            len(list(paths(".", min_depth=1, max_depth=0,))) == 2
+            len(
+                list(
+                    paths(
+                        ".",
+                        min_depth=1,
+                        max_depth=0,
+                    )
+                )
+            )
+            == 2
         )  # just 'boot' and 'lost+found'
 
         # this never worked
@@ -199,22 +221,8 @@ def extract_stage3(
         ##    gpg_cmd += keyserver_options
         # run_command(gpg_cmd, verbose=True)
 
-        sh.gpg(
-            "--keyserver",
-            "hkps://keys.gentoo.org",
-            "--recv-keys",
-            "0xBB572E0E2D182910",
-            _out=sys.stdout,
-            _err=sys.stderr,
-        )
-        sh.gpg(
-            "--keyserver",
-            "hkps://keys.gentoo.org",
-            "--recv-keys",
-            "534E4209AB49EEE1C19D96162C44695DB9F6043D",
-            _out=sys.stdout,
-            _err=sys.stderr,
-        )
+        get_gpg_key("0xBB572E0E2D182910")
+        get_gpg_key("534E4209AB49EEE1C19D96162C44695DB9F6043D")
 
         ic(stage3_file)
         sh.gpg(
@@ -237,7 +245,16 @@ def extract_stage3(
 
         # assert len(list(paths(".", verbose=verbose))) == 1  # empty directory
         assert (
-            len(list(paths(".", min_depth=1, max_depth=0,))) == 2
+            len(
+                list(
+                    paths(
+                        ".",
+                        min_depth=1,
+                        max_depth=0,
+                    )
+                )
+            )
+            == 2
         )  # just 'boot' and 'lost+found'
         sh.tar(
             "--xz",
@@ -259,12 +276,14 @@ def cli(
     ctx,
     verbose_inf: bool,
     dict_output: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
-    tty, verbose = tv(
+    tty, verbose = tvicgvd(
         ctx=ctx,
         verbose=verbose,
         verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
     )
 
 
@@ -291,18 +310,19 @@ def _get_stage3_url(
     proxy: bool,
     verbose_inf: bool,
     dict_output: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
-    tty, verbose = tv(
+    tty, verbose = tvicgvd(
         ctx=ctx,
         verbose=verbose,
         verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
     )
 
     proxy_dict = None
     if proxy:
-        proxy_dict = construct_proxy_dict(
-        )
+        proxy_dict = construct_proxy_dict()
     url = get_stage3_url(
         stdlib=stdlib,
         multilib=multilib,
@@ -332,18 +352,19 @@ def _download_stage3(
     proxy: str,
     verbose_inf: bool,
     dict_output: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
-    tty, verbose = tv(
+    tty, verbose = tvicgvd(
         ctx=ctx,
         verbose=verbose,
         verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
     )
 
     proxy_dict = None
     if proxy:
-        proxy_dict = construct_proxy_dict(
-        )
+        proxy_dict = construct_proxy_dict()
     download_stage3(
         stdlib=stdlib,
         multilib=multilib,
@@ -385,16 +406,18 @@ def _extract_stage3(
     proxy: str,
     verbose_inf: bool,
     dict_output: bool,
-    verbose: bool | int | float = False,
+    verbose: bool = False,
 ):
-    tty, verbose = tv(
+    tty, verbose = tvicgvd(
         ctx=ctx,
         verbose=verbose,
         verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
     )
 
     proxy_dict = None
-    #todo
+    # todo
     if proxy:
         proxy_dict = construct_proxy_dict()
 
