@@ -69,7 +69,6 @@ def get_gpg_key(fingerprint: str):
 
 def get_stage3_url(
     stdlib: str,
-    multilib: bool,
     arch: str,
     proxy_dict: dict,
     verbose: bool = False,
@@ -77,18 +76,17 @@ def get_stage3_url(
     assert isinstance(arch, str)
     assert len(arch) > 0
 
-    # mirror = 'http://ftp.ucsb.edu/pub/mirrors/linux/gentoo/releases/amd64/autobuilds/'
+    # https://bugs.gentoo.org/931947
     mirror = "http://gentoo.osuosl.org/releases/" + arch + "/autobuilds/"
     if stdlib == "glibc":
-        if not multilib:
-            latest = "latest-stage3-" + arch + "-hardened-nomultilib-openrc.txt"
-        else:
-            latest = "latest-stage3-" + arch + "-hardened-openrc.txt"
+        latest = "latest-stage3-" + arch + "-hardened-openrc.txt"
+        # if not multilib:
+        #    latest = "latest-stage3-" + arch + "-hardened-nomultilib-openrc.txt"
+        # else:
+        #    latest = "latest-stage3-" + arch + "-hardened-openrc.txt"
 
     elif stdlib == "musl":
-        #
         # return "http://gentoo.osuosl.org/releases/amd64/autobuilds/current-stage3-amd64-musl-hardened/stage3-amd64-hardened-nomultilib-openrc-20211003T170529Z.tar.xz"
-        assert not multilib
         latest = "latest-stage3-" + arch + "-musl-hardened.txt"
 
     elif stdlib == "uclibc":
@@ -122,7 +120,6 @@ def get_stage3_url(
 def download_stage3(
     *,
     stdlib: str,
-    multilib: bool,
     arch: str,
     proxy_dict: dict,
     verbose: bool = False,
@@ -134,7 +131,6 @@ def download_stage3(
     url = get_stage3_url(
         proxy_dict=proxy_dict,
         stdlib=stdlib,
-        multilib=multilib,
         arch=arch,
     )
     icp(url)
@@ -164,7 +160,6 @@ def download_stage3(
 def extract_stage3(
     *,
     stdlib: str,
-    multilib: bool,
     arch: str,
     destination: Path,
     expect_mounted_destination: bool,
@@ -175,7 +170,7 @@ def extract_stage3(
     assert isinstance(arch, str)
     assert len(arch) > 0
     destination = Path(destination).resolve()
-    icp(stdlib, multilib, arch, destination, vm)
+    icp(stdlib, arch, destination, vm)
     icp(destination)
     if expect_mounted_destination:
         assert path_is_mounted(
@@ -189,11 +184,8 @@ def extract_stage3(
         icp(destination.as_posix())
         assert os.getcwd() == destination.as_posix()
         proxy_dict = construct_proxy_dict()
-        # url = get_stage3_url(stdlib=stdlib, multilib=multilib, arch=arch, proxy_dict=proxy_dict)
-        # stage3_file = download_stage3(stdlib=stdlib, multilib=multilib, url=url, arch=arch, proxy_dict=proxy_dict)
         stage3_file = download_stage3(
             stdlib=stdlib,
-            multilib=multilib,
             arch=arch,
             proxy_dict=proxy_dict,
         )
@@ -298,10 +290,6 @@ def cli(
     required=True,
     type=click.Choice(["glibc", "musl", "uclibc"]),
 )
-@click.option(
-    "--multilib",
-    is_flag=True,
-)
 @click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
@@ -309,7 +297,6 @@ def cli(
 def _get_stage3_url(
     ctx,
     stdlib: str,
-    multilib: bool,
     arch: str,
     proxy: bool,
     verbose_inf: bool,
@@ -329,7 +316,6 @@ def _get_stage3_url(
         proxy_dict = construct_proxy_dict()
     url = get_stage3_url(
         stdlib=stdlib,
-        multilib=multilib,
         arch=arch,
         proxy_dict=proxy_dict,
     )
@@ -343,7 +329,6 @@ def _get_stage3_url(
     required=True,
     type=click.Choice(["glibc", "musl", "uclibc"]),
 )
-@click.option("--multilib", is_flag=True, required=False)
 @click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
@@ -352,7 +337,6 @@ def _download_stage3(
     ctx,
     stdlib: str,
     arch: str,
-    multilib: bool,
     proxy: str,
     verbose_inf: bool,
     dict_output: bool,
@@ -371,7 +355,6 @@ def _download_stage3(
         proxy_dict = construct_proxy_dict()
     download_stage3(
         stdlib=stdlib,
-        multilib=multilib,
         arch=arch,
         proxy_dict=proxy_dict,
     )
@@ -396,7 +379,6 @@ def _download_stage3(
     required=True,
     type=click.Choice(["glibc", "musl", "uclibc"]),
 )
-@click.option("--multilib", is_flag=True, required=False)
 @click.option("--proxy", is_flag=True)
 @click_add_options(click_arch_select)
 @click_add_options(click_global_options)
@@ -406,7 +388,6 @@ def _extract_stage3(
     destination: Path,
     stdlib: str,
     arch: str,
-    multilib: bool,
     proxy: str,
     verbose_inf: bool,
     dict_output: bool,
@@ -428,7 +409,6 @@ def _extract_stage3(
     extract_stage3(
         stdlib=stdlib,
         arch=arch,
-        multilib=multilib,
         destination=destination,
         expect_mounted_destination=False,
         vm=None,
