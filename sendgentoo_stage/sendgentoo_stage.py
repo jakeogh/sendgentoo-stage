@@ -99,6 +99,7 @@ def download_stage3(
         url=url,
         destination_dir=destination_dir,
         proxy_dict=proxy_dict,
+        progress=True,
     )
     for suffix in (".CONTENTS", ".DIGESTS", ".asc"):
         download_file(
