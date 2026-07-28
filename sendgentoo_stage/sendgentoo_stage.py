@@ -101,12 +101,11 @@ def download_stage3(
         proxy_dict=proxy_dict,
         progress=True,
     )
-    for suffix in (".CONTENTS", ".DIGESTS", ".asc"):
-        download_file(
-            url=url + suffix,
-            destination_dir=destination_dir,
-            proxy_dict=proxy_dict,
-        )
+    download_file(
+        url=url + ".asc",
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+    )
     return Path(stage3_file)
 
 
