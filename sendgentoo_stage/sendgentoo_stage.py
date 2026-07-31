@@ -29,8 +29,15 @@ signal(SIGPIPE, SIG_DFL)
 
 _gpg = hs.Command("gpg")
 
+STAGE3_KEY_FINGERPRINTS = (
+    "0xBB572E0E2D182910",
+    "534E4209AB49EEE1C19D96162C44695DB9F6043D",
+)
+STAGE3_KEYS_NAME = "keys.asc"
 
-def get_gpg_key(fingerprint: str) -> None:
+
+def fetch_gpg_key(fingerprint: str) -> None:
+    # keyserver access, so this runs only where there is internet
     try:
         _gpg("--fingerprint", fingerprint)
     except hs.ErrorReturnCode_2:
@@ -42,6 +49,35 @@ def get_gpg_key(fingerprint: str) -> None:
             _out=sys.stdout,
             _err=sys.stderr,
         )
+
+
+def export_stage3_keys(*, destination: Path) -> Path:
+    # exported where there is internet so a machine without it can verify the
+    # signature without reaching a keyserver
+    for fingerprint in STAGE3_KEY_FINGERPRINTS:
+        fetch_gpg_key(fingerprint)
+    _gpg(
+        "--yes",
+        "--armor",
+        "--output",
+        destination.as_posix(),
+        "--export",
+        *STAGE3_KEY_FINGERPRINTS,
+        _out=sys.stdout,
+        _err=sys.stderr,
+    )
+    return destination
+
+
+def import_stage3_keys(*, keys_url: str, proxy_dict: None | dict) -> None:
+    destination_dir = Path("/var/tmp/sendgentoo_stage/")
+    os.makedirs(destination_dir, exist_ok=True)
+    keys_file = download_file(
+        url=keys_url,
+        destination_dir=destination_dir,
+        proxy_dict=proxy_dict,
+    )
+    _gpg("--import", str(keys_file), _out=sys.stdout, _err=sys.stderr)
 
 
 def get_stage3_url(
@@ -80,20 +116,15 @@ def get_stage3_url(
 
 def download_stage3(
     *,
-    stdlib: str,
-    arch: str,
+    url: str,
     proxy_dict: None | dict,
     verbose: bool = False,
 ) -> Path:
-    assert isinstance(arch, str)
-    assert len(arch) > 0
+    # the url is always explicit: a machine without internet is handed one
+    # pointing at the deployment server, and resolving a mirror is a separate
+    # operation that only runs where there is internet
     destination_dir = Path("/var/tmp/sendgentoo_stage/")  # unpriv user
     os.makedirs(destination_dir, exist_ok=True)
-    url = get_stage3_url(
-        proxy_dict=proxy_dict,
-        stdlib=stdlib,
-        arch=arch,
-    )
     icp(url)
     stage3_file = download_file(
         url=url,
@@ -123,18 +154,15 @@ def _assert_empty_root() -> None:
 
 def extract_stage3(
     *,
-    stdlib: str,
-    arch: str,
+    url: str,
+    keys_url: str,
     destination: Path,
     expect_mounted_destination: bool,
     verbose: bool = False,
 ) -> None:
-    assert isinstance(arch, str)
-    assert len(arch) > 0
     destination = Path(destination).resolve()
     icp(
-        stdlib,
-        arch,
+        url,
         destination,
     )
     if expect_mounted_destination:
@@ -143,15 +171,13 @@ def extract_stage3(
     with chdir(destination):
         proxy_dict = construct_proxy_dict()
         stage3_file = download_stage3(
-            stdlib=stdlib,
-            arch=arch,
+            url=url,
             proxy_dict=proxy_dict,
         )
         assert path_is_file(stage3_file)
         _assert_empty_root()
 
-        get_gpg_key("0xBB572E0E2D182910")
-        get_gpg_key("534E4209AB49EEE1C19D96162C44695DB9F6043D")
+        import_stage3_keys(keys_url=keys_url, proxy_dict=proxy_dict)
 
         ic(stage3_file)
         _gpg(
@@ -264,11 +290,48 @@ def _download_stage3(
     proxy_dict = None
     if proxy:
         proxy_dict = construct_proxy_dict()
-    download_stage3(
+    url = get_stage3_url(
         stdlib=stdlib,
         arch=arch,
         proxy_dict=proxy_dict,
     )
+    download_stage3(
+        url=url,
+        proxy_dict=proxy_dict,
+    )
+
+
+@cli.command("export-stage3-keys")
+@click.argument(
+    "destination",
+    type=click.Path(
+        exists=False,
+        dir_okay=False,
+        file_okay=True,
+        allow_dash=False,
+        path_type=Path,
+    ),
+    nargs=1,
+    required=True,
+)
+@click_add_options(click_global_options)
+@click.pass_context
+def _export_stage3_keys(
+    ctx: click.Context,
+    destination: Path,
+    verbose_inf: bool,
+    dict_output: bool,
+    verbose: bool = False,
+) -> None:
+    tty, verbose = tvicgvd(
+        ctx=ctx,
+        verbose=verbose,
+        verbose_inf=verbose_inf,
+        ic=ic,
+        gvd=gvd,
+    )
+
+    export_stage3_keys(destination=destination)
 
 
 @cli.command("extract-stage3")
@@ -284,20 +347,15 @@ def _download_stage3(
     nargs=1,
     required=True,
 )
-@click.option(
-    "--stdlib",
-    is_flag=False,
-    required=True,
-    type=click.Choice(["glibc", "musl"]),
-)
-@click_add_options(click_arch_select)
+@click.option("--url", is_flag=False, required=True, type=str)
+@click.option("--keys-url", is_flag=False, required=True, type=str)
 @click_add_options(click_global_options)
 @click.pass_context
 def _extract_stage3(
     ctx: click.Context,
     destination: Path,
-    stdlib: str,
-    arch: str,
+    url: str,
+    keys_url: str,
     verbose_inf: bool,
     dict_output: bool,
     verbose: bool = False,
@@ -311,8 +369,8 @@ def _extract_stage3(
     )
 
     extract_stage3(
-        stdlib=stdlib,
-        arch=arch,
+        url=url,
+        keys_url=keys_url,
         destination=destination,
         expect_mounted_destination=False,
     )
